@@ -3,6 +3,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
   <style>
     #muteButton {
       position: fixed;
@@ -22,6 +23,7 @@
     }
   </style>
 </head>
+
 <body>
   <a-scene mindar-image="imageTargetSrc: ./targets.mind;" maxTrack="2"
            color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights"
@@ -29,61 +31,104 @@
            device-orientation-permission-ui="enabled: false">
 
     <a-assets>
-      <video id="video1" src="./assets/cemetery-dotcom-video.mp4"
-             preload="auto" loop="true" playsinline="true"
-             crossorigin="anonymous" muted></video>
+      <!-- MARKER 0: transparent WebM video + audio -->
+      <video id="video2" src="./assets/cemetery-nft-video.webm"
+             autoplay loop muted playsinline crossorigin="anonymous"></video>
+      <audio id="audio2" src="./assets/cemetery-nft-audio.mp3" preload="auto"></audio>
 
+      <!-- MARKER 1: transparent WebM video + audio -->
+      <video id="video1" src="./assets/cemetery-dotcom-video.webm"
+             autoplay loop muted playsinline crossorigin="anonymous"></video>
       <audio id="audio1" src="./assets/cemetery-dotcom-audio.mp3" preload="auto"></audio>
     </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <a-entity mindar-image-target="targetIndex: 0">
-      <a-plane id="video-plane" src="#video1" width="1.8" height="3.555"></a-plane>
+    <!-- MARKER 0 → video2 + audio2 -->
+    <a-entity id="marker0" mindar-image-target="targetIndex: 0">
+      <a-plane width="1.8" height="3.555"
+               material="src: #video2; transparent: true;"></a-plane>
     </a-entity>
+
+    <!-- MARKER 1 → video1 + audio1 -->
+    <a-entity id="marker1" mindar-image-target="targetIndex: 1">
+      <a-plane width="1.8" height="3.555"
+               material="src: #video1; transparent: true;"></a-plane>
+    </a-entity>
+
   </a-scene>
 
-  <!-- Mute/unmute button -->
   <button id="muteButton">🔇</button>
 
   <script>
-    const video = document.querySelector("#video1");
-    const audio = document.querySelector("#audio1");
-    const target = document.querySelector("[mindar-image-target]");
-    const plane = document.querySelector("#video-plane");
+    const video1 = document.querySelector("#video1");
+    const video2 = document.querySelector("#video2");
+    const audio1 = document.querySelector("#audio1");
+    const audio2 = document.querySelector("#audio2");
+    const marker0 = document.querySelector("#marker0");
+    const marker1 = document.querySelector("#marker1");
     const muteBtn = document.querySelector("#muteButton");
 
-    // Keep video plane portrait ratio
+    // Keep portrait ratio for both videos
     const videoRatio = 1080 / 1920;
     const width = 1.8;
     const height = width / videoRatio;
-    plane.setAttribute("width", width);
-    plane.setAttribute("height", height);
 
-    // Play/pause video on target
-    target.addEventListener("targetFound", () => video.play());
-    target.addEventListener("targetLost", () => video.pause());
+    document.querySelectorAll("a-plane").forEach(plane => {
+      plane.setAttribute("width", width);
+      plane.setAttribute("height", height);
+    });
 
-    // First tap starts audio
-    function startAudio() {
-      audio.currentTime = 0;
-      audio.play();
-      window.removeEventListener("touchstart", startAudio);
-      window.removeEventListener("click", startAudio);
+    // Marker 0 events → video2 + audio2
+    marker0.addEventListener("targetFound", () => {
+      video2.currentTime = 0;
+      audio2.currentTime = 0;
+      video2.play();
+      audio2.play();
+    });
+    marker0.addEventListener("targetLost", () => {
+      video2.pause();
+      audio2.pause();
+      audio2.currentTime = 0;
+    });
+
+    // Marker 1 events → video1 + audio1
+    marker1.addEventListener("targetFound", () => {
+      video1.currentTime = 0;
+      audio1.currentTime = 0;
+      video1.play();
+      audio1.play();
+    });
+    marker1.addEventListener("targetLost", () => {
+      video1.pause();
+      audio1.pause();
+      audio1.currentTime = 0;
+    });
+
+    // Unlock audio on first tap (required by browsers)
+    function unlockAudio() {
+      audio1.play().then(() => audio1.pause());
+      audio2.play().then(() => audio2.pause());
+      window.removeEventListener("touchstart", unlockAudio);
+      window.removeEventListener("click", unlockAudio);
     }
-    window.addEventListener("touchstart", startAudio);
-    window.addEventListener("click", startAudio);
+    window.addEventListener("touchstart", unlockAudio);
+    window.addEventListener("click", unlockAudio);
 
-    // Mute/unmute button toggles audio
+    // Mute / unmute button
     muteBtn.addEventListener("click", () => {
-      if (audio.paused) {
-        audio.play();
-        muteBtn.textContent = "🔊";
-      } else {
-        audio.pause();
+      const anyPlaying = !audio1.paused || !audio2.paused;
+      if (anyPlaying) {
+        audio1.pause();
+        audio2.pause();
         muteBtn.textContent = "🔇";
+      } else {
+        if (!video1.paused) audio1.play();
+        if (!video2.paused) audio2.play();
+        muteBtn.textContent = "🔊";
       }
     });
   </script>
+
 </body>
 </html>
