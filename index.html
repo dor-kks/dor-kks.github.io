@@ -3,112 +3,123 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.10.2/lottie.min.js"></script>
+
   <style>
-    body { margin:0; position:relative; overflow:hidden; }
-    .lottie-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      pointer-events: none;
-      background: transparent;
-      z-index: 99999;
-      visibility: hidden;
-    }
     #muteButton {
-      position: fixed; top: 10px; right: 10px; z-index: 100000;
-      background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%;
-      width: 50px; height: 50px; font-size: 24px; display: flex; align-items: center; justify-content: center;
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 9999;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   </style>
 </head>
+
 <body>
-<a-scene mindar-image="imageTargetSrc: ./targets.mind;" maxTrack="2"
-         renderer="colorManagement: true, physicallyCorrectLights"
-         vr-mode-ui="enabled: false"
-         device-orientation-permission-ui="enabled: false">
+  <a-scene mindar-image="imageTargetSrc: ./targets.mind;" maxTrack="2"
+           color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights"
+           vr-mode-ui="enabled: false"
+           device-orientation-permission-ui="enabled: false">
 
-  <a-assets>
-    <audio id="audio1" src="./assets/cemetery-dotcom-audio.mp3" preload="auto"></audio>
-    <audio id="audio2" src="./assets/cemetery-nft-audio.mp3" preload="auto"></audio>
-  </a-assets>
+    <a-assets>
+      <!-- REPLACED VIDEOS WITH PNGS -->
+      <img id="img-dotcom" src="./assets/dotcom-illustrations.png" crossorigin="anonymous">
+      <img id="img-nft" src="./assets/nft-illustrations.png" crossorigin="anonymous">
 
-  <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-  <a-entity id="marker0" mindar-image-target="targetIndex: 0"></a-entity>
-  <a-entity id="marker1" mindar-image-target="targetIndex: 1"></a-entity>
-</a-scene>
+      <!-- AUDIO REMAINS -->
+      <audio id="audio1" src="./assets/cemetery-dotcom-audio.mp3" preload="auto"></audio>
+      <audio id="audio2" src="./assets/cemetery-nft-audio.mp3" preload="auto"></audio>
+    </a-assets>
 
-<div id="lottie2" class="lottie-container"></div>
-<div id="lottie1" class="lottie-container"></div>
-<button id="muteButton">🔇</button>
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-<script>
-const audio1 = document.querySelector("#audio1");
-const audio2 = document.querySelector("#audio2");
-const marker0 = document.querySelector("#marker0");
-const marker1 = document.querySelector("#marker1");
-const lottieContainer2 = document.querySelector("#lottie2");
-const lottieContainer1 = document.querySelector("#lottie1");
+    <!-- MARKER 0 → DOTCOM PNG + AUDIO1 -->
+    <a-entity id="marker0" mindar-image-target="targetIndex: 1">
+      <a-plane width="1.8" height="3.555"
+               material="src: #img-dotcom; transparent: true;"></a-plane>
+    </a-entity>
 
-// Load with 'canvas' renderer for mobile coverage
-const animation2 = lottie.loadAnimation({
-  container: lottieContainer2,
-  renderer: 'canvas',
-  loop: true,
-  autoplay: false,
-  path: './assets/cemetery-nft-animation.json'
-});
-const animation1 = lottie.loadAnimation({
-  container: lottieContainer1,
-  renderer: 'canvas',
-  loop: true,
-  autoplay: false,
-  path: './assets/cemetery-dotcom-animation.json'
-});
+    <!-- MARKER 1 → NFT PNG + AUDIO2 -->
+    <a-entity id="marker1" mindar-image-target="targetIndex: 0">
+      <a-plane width="1.8" height="3.555"
+               material="src: #img-nft; transparent: true;"></a-plane>
+    </a-entity>
 
-// Show/hide Lottie animations and play/pause audio on marker detection
-marker0.addEventListener("targetFound", () => {
-  lottieContainer2.style.visibility = "visible";
-  animation2.goToAndPlay(0, true);
-  audio2.currentTime = 0; audio2.play();
-});
-marker0.addEventListener("targetLost", () => {
-  lottieContainer2.style.visibility = "hidden";
-  animation2.stop(); audio2.pause(); audio2.currentTime = 0;
-});
-marker1.addEventListener("targetFound", () => {
-  lottieContainer1.style.visibility = "visible";
-  animation1.goToAndPlay(0, true);
-  audio1.currentTime = 0; audio1.play();
-});
-marker1.addEventListener("targetLost", () => {
-  lottieContainer1.style.visibility = "hidden";
-  animation1.stop(); audio1.pause(); audio1.currentTime = 0;
-});
+  </a-scene>
 
-// Unlock audio for mobile autoplay
-function unlockAudio() {
-  audio1.play().then(() => audio1.pause());
-  audio2.play().then(() => audio2.pause());
-  window.removeEventListener("touchstart", unlockAudio);
-  window.removeEventListener("click", unlockAudio);
-}
-window.addEventListener("touchstart", unlockAudio);
-window.addEventListener("click", unlockAudio);
+  <button id="muteButton">🔇</button>
 
-// Mute/unmute button logic
-const muteBtn = document.querySelector("#muteButton");
-muteBtn.addEventListener("click", () => {
-  const isPlaying = !audio1.paused || !audio2.paused;
-  if (isPlaying) { audio1.pause(); audio2.pause(); muteBtn.textContent = "🔇"; }
-  else {
-    if (lottieContainer1.style.visibility !== "hidden") audio1.play();
-    if (lottieContainer2.style.visibility !== "hidden") audio2.play();
-    muteBtn.textContent = "🔊";
-  }
-});
-</script>
+  <script>
+    const audio1 = document.querySelector("#audio1");
+    const audio2 = document.querySelector("#audio2");
+    const marker0 = document.querySelector("#marker0");
+    const marker1 = document.querySelector("#marker1");
+    const muteBtn = document.querySelector("#muteButton");
+
+    // Maintain original portrait ratio (1080 × 1920)
+    const imgRatio = 1080 / 1920;
+    const width = 1.8;
+    const height = width / imgRatio;
+
+    document.querySelectorAll("a-plane").forEach(plane => {
+      plane.setAttribute("width", width);
+      plane.setAttribute("height", height);
+    });
+
+    // MARKER 0 → plays audio1
+    marker0.addEventListener("targetFound", () => {
+      audio1.currentTime = 0;
+      audio1.play();
+    });
+    marker0.addEventListener("targetLost", () => {
+      audio1.pause();
+      audio1.currentTime = 0;
+    });
+
+    // MARKER 1 → plays audio2
+    marker1.addEventListener("targetFound", () => {
+      audio2.currentTime = 0;
+      audio2.play();
+    });
+    marker1.addEventListener("targetLost", () => {
+      audio2.pause();
+      audio2.currentTime = 0;
+    });
+
+    // Unlock audio on first user gesture
+    function unlockAudio() {
+      audio1.play().then(() => audio1.pause());
+      audio2.play().then(() => audio2.pause());
+      window.removeEventListener("touchstart", unlockAudio);
+      window.removeEventListener("click", unlockAudio);
+    }
+    window.addEventListener("touchstart", unlockAudio);
+    window.addEventListener("click", unlockAudio);
+
+    // Mute / Unmute button
+    muteBtn.addEventListener("click", () => {
+      const isPlaying = !audio1.paused || !audio2.paused;
+
+      if (isPlaying) {
+        audio1.pause();
+        audio2.pause();
+        muteBtn.textContent = "🔇";
+      } else {
+        if (marker0.dataset.visible) audio1.play();
+        if (marker1.dataset.visible) audio2.play();
+        muteBtn.textContent = "🔊";
+      }
+    });
+  </script>
+
 </body>
 </html>
