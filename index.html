@@ -25,33 +25,41 @@
 </head>
 
 <body>
-  <a-scene mindar-image="imageTargetSrc: ./targets.mind;" maxTrack="2"
+  <a-scene mindar-image="imageTargetSrc: ./targets.mind;" maxTrack="3"
            color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights"
            vr-mode-ui="enabled: false"
            device-orientation-permission-ui="enabled: false">
 
     <a-assets>
-      <!-- REPLACED VIDEOS WITH PNGS -->
+      <!-- PNG IMAGES -->
       <img id="img-dotcom" src="./assets/dotcom-illustrations.png" crossorigin="anonymous">
       <img id="img-nft" src="./assets/nft-illustrations.png" crossorigin="anonymous">
+      <img id="img-genai" src="./assets/genai-illustrations.png" crossorigin="anonymous">
 
-      <!-- AUDIO REMAINS -->
+      <!-- AUDIO FILES -->
       <audio id="audio1" src="./assets/cemetery-dotcom-audio.mp3" preload="auto"></audio>
       <audio id="audio2" src="./assets/cemetery-nft-audio.mp3" preload="auto"></audio>
+      <audio id="audio3" src="./assets/cemetery-genai-audio.mp3" preload="auto"></audio>
     </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <!-- MARKER 0 → DOTCOM PNG + AUDIO1 -->
-    <a-entity id="marker0" mindar-image-target="targetIndex: 1">
-      <a-plane width="1.8" height="3.555"
-               material="src: #img-dotcom; transparent: true;"></a-plane>
-    </a-entity>
+    <!-- MARKER 0 → NOW NFT -->
+<a-entity id="marker0" mindar-image-target="targetIndex: 1">
+  <a-plane width="1.8" height="3.555"
+           material="src: #img-nft; transparent: true;"></a-plane>
+</a-entity>
 
-    <!-- MARKER 1 → NFT PNG + AUDIO2 -->
-    <a-entity id="marker1" mindar-image-target="targetIndex: 0">
+<!-- MARKER 1 → NOW DOTCOM -->
+<a-entity id="marker1" mindar-image-target="targetIndex: 0">
+  <a-plane width="1.8" height="3.555"
+           material="src: #img-dotcom; transparent: true;"></a-plane>
+</a-entity>
+
+    <!-- MARKER 2 → GENERATIVE AI -->
+    <a-entity id="marker2" mindar-image-target="targetIndex: 2">
       <a-plane width="1.8" height="3.555"
-               material="src: #img-nft; transparent: true;"></a-plane>
+               material="src: #img-genai; transparent: true;"></a-plane>
     </a-entity>
 
   </a-scene>
@@ -61,8 +69,12 @@
   <script>
     const audio1 = document.querySelector("#audio1");
     const audio2 = document.querySelector("#audio2");
+    const audio3 = document.querySelector("#audio3");
+
     const marker0 = document.querySelector("#marker0");
     const marker1 = document.querySelector("#marker1");
+    const marker2 = document.querySelector("#marker2");
+
     const muteBtn = document.querySelector("#muteButton");
 
     // Maintain original portrait ratio (1080 × 1920)
@@ -75,30 +87,42 @@
       plane.setAttribute("height", height);
     });
 
-    // MARKER 0 → plays audio1
-    marker0.addEventListener("targetFound", () => {
-      audio1.currentTime = 0;
-      audio1.play();
+   // MARKER 0 → now plays audio2 (NFT)
+marker0.addEventListener("targetFound", () => {
+  audio2.currentTime = 0;
+  audio2.play();
+});
+marker0.addEventListener("targetLost", () => {
+  audio2.pause();
+  audio2.currentTime = 0;
+});
+
+// MARKER 1 → now plays audio1 (DotCom)
+marker1.addEventListener("targetFound", () => {
+  audio1.currentTime = 0;
+  audio1.play();
+});
+marker1.addEventListener("targetLost", () => {
+  audio1.pause();
+  audio1.currentTime = 0;
+});
+
+
+    // MARKER 2 → audio3
+    marker2.addEventListener("targetFound", () => {
+      audio3.currentTime = 0;
+      audio3.play();
     });
-    marker0.addEventListener("targetLost", () => {
-      audio1.pause();
-      audio1.currentTime = 0;
+    marker2.addEventListener("targetLost", () => {
+      audio3.pause();
+      audio3.currentTime = 0;
     });
 
-    // MARKER 1 → plays audio2
-    marker1.addEventListener("targetFound", () => {
-      audio2.currentTime = 0;
-      audio2.play();
-    });
-    marker1.addEventListener("targetLost", () => {
-      audio2.pause();
-      audio2.currentTime = 0;
-    });
-
-    // Unlock audio on first user gesture
+    // Unlock all audio on first user gesture
     function unlockAudio() {
-      audio1.play().then(() => audio1.pause());
-      audio2.play().then(() => audio2.pause());
+      [audio1, audio2, audio3].forEach(a => {
+        a.play().then(() => a.pause());
+      });
       window.removeEventListener("touchstart", unlockAudio);
       window.removeEventListener("click", unlockAudio);
     }
@@ -107,15 +131,17 @@
 
     // Mute / Unmute button
     muteBtn.addEventListener("click", () => {
-      const isPlaying = !audio1.paused || !audio2.paused;
+      const anyPlaying = !audio1.paused || !audio2.paused || !audio3.paused;
 
-      if (isPlaying) {
+      if (anyPlaying) {
         audio1.pause();
         audio2.pause();
+        audio3.pause();
         muteBtn.textContent = "🔇";
       } else {
         if (marker0.dataset.visible) audio1.play();
         if (marker1.dataset.visible) audio2.play();
+        if (marker2.dataset.visible) audio3.play();
         muteBtn.textContent = "🔊";
       }
     });
